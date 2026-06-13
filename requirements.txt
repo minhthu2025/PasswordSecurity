@@ -1,0 +1,4 @@
+argon2-cffi
+cryptography
+mysql-connector-python
+python-dotenv

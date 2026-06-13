@@ -1,0 +1,17 @@
+# Docker build context ignore - giảm size context, tránh copy secret/venv
+.env
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+.DS_Store
+app.log
+*.md
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+# tests/ được giữ lại (nhỏ) để có thể nạp sample_data.sql nếu cần

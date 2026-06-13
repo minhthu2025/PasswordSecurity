@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: passwordsecurity-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-A123456a@@}
+      MYSQL_DATABASE: ${DB_NAME:-password_security}
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      # Sử dụng mysql -e SELECT để chắc chắn server đã sẵn sàng chấp nhận query từ client khác container
+      test: ["CMD-SHELL", "mysql -h localhost -uroot -p${DB_PASSWORD:-A123456a@@} -e 'SELECT 1' > /dev/null 2>&1 || exit 1"]
+      interval: 5s
+      timeout: 10s
+      retries: 15
+      start_period: 30s
+    # Mở port 3307 trên máy host nếu bạn muốn dùng MySQL client bên ngoài để debug (không bắt buộc)
+    ports:
+      - "3307:3306"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: passwordsecurity-app
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Ghi đè host DB vì bên trong Docker network tên service là "db"
+      - DB_HOST=db
+      - DB_USER=root
+      - DB_PASSWORD=${DB_PASSWORD:-A123456a@@}
+      - DB_NAME=${DB_NAME:-password_security}
+      - MASTER_KEY=${MASTER_KEY}
+    tty: true
+    stdin_open: true
+    # App là CLI tương tác → không nên để "docker compose up -d" tự chạy.
+    # Chỉ dùng để build + chạy on-demand bằng "docker compose run".
+    profiles:
+      - cli
+
+volumes:
+  db_data:

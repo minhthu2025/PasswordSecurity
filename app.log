@@ -1,0 +1,21 @@
+[2026-06-12 18:54:51] [REGISTER] user_id=99   ip=10.140.58.242                  | Đăng ký thành công với username=testuser, strength=Strong
+[2026-06-12 18:57:27] [REGISTER] user_id=9    ip=10.140.58.242                  | Đăng ký thành công với username=hainam, strength=Strong
+[2026-06-12 18:57:40] [LOGIN_SUCCESS] user_id=9    ip=203.0.113.45 (local=10.140.58.242) | Đăng nhập thành công (username=hainam)
+[2026-06-12 18:58:00] [UPDATE_PROFILE] user_id=9    ip=10.140.58.242                  | Cập nhật: phone
+[2026-06-12 18:58:27] [CHANGE_PASSWORD] user_id=9    ip=198.51.100.23 (local=10.140.58.242) | Thay đổi mật khẩu thành công
+[2026-06-12 18:58:31] [LOGOUT] user_id=9    ip=10.5.3.183 (local=10.140.58.242) | Người dùng đăng xuất
+[2026-06-13 09:26:57] [REGISTER] user_id=7    ip=192.168.0.104                  | Đăng ký thành công với username=minhthu11, strength=Medium
+[2026-06-13 09:27:21] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.104                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-13 09:32:00] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.104                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-13 09:44:21] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.104                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-13 09:51:22] [LOGIN_SUCCESS] user_id=7    ip=192.0.2.99 (local=192.168.0.104) | Đăng nhập thành công (username=minhthu11)
+[2026-06-13 09:54:51] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.104                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-13 09:55:19] [UPDATE_PROFILE] user_id=7    ip=203.0.113.45 (local=192.168.0.104) | Cập nhật: phone
+[2026-06-13 09:55:45] [CHANGE_PASSWORD] user_id=7    ip=192.168.0.104                  | Thay đổi mật khẩu thành công
+[2026-06-13 09:56:05] [LOGOUT] user_id=7    ip=203.0.113.45 (local=192.168.0.104) | Người dùng đăng xuất
+[2026-06-13 09:56:22] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.104                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-13 09:56:31] [LOGOUT] user_id=7    ip=198.51.100.23 (local=192.168.0.104) | Người dùng đăng xuất
+[2026-06-13 10:19:23] [REGISTER] user_id=8    ip=192.168.0.104                  | Đăng ký thành công với username=nhunguyen, strength=Medium
+[2026-06-13 10:19:39] [LOGIN_SUCCESS] user_id=8    ip=192.168.0.104                  | Đăng nhập thành công (username=nhunguyen)
+[2026-06-13 10:20:02] [CHANGE_PASSWORD] user_id=8    ip=203.0.113.45 (local=192.168.0.104) | Thay đổi mật khẩu thành công
+[2026-06-13 10:20:11] [LOGOUT] user_id=8    ip=203.0.113.177 (local=192.168.0.104) | Người dùng đăng xuất
