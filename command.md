@@ -1,5 +1,8 @@
 Command chạy chuẩn (copy paste dùng luôn):
 
+# Build image (lần đầu hoặc sau khi thay đổi Dockerfile/requirements.txt)
+docker compose build
+
 # 1. Khởi động database chạy nền (detached)
 docker compose up -d db
 

@@ -36,10 +36,6 @@ services:
       - MASTER_KEY=${MASTER_KEY}
     tty: true
     stdin_open: true
-    # App là CLI tương tác → không nên để "docker compose up -d" tự chạy.
-    # Chỉ dùng để build + chạy on-demand bằng "docker compose run".
-    profiles:
-      - cli
 
 volumes:
   db_data:

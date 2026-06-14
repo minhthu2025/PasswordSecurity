@@ -1,5 +1,4 @@
 import os
-import getpass
 from datetime import datetime
 
 from modules.database import init_db
@@ -38,7 +37,7 @@ def do_check_password():
     print("Nhập mật khẩu bất kỳ để kiểm tra (Ctrl+C để hủy).\n")
     try:
         while True:
-            password = getpass.getpass("Mật khẩu cần kiểm tra: ")
+            password = input("Mật khẩu cần kiểm tra: ")
             if not password:
                 print("Vui lòng nhập mật khẩu.")
                 continue
@@ -48,7 +47,7 @@ def do_check_password():
                 print(f"  {get_password_requirements_message()}")
             elif strength == "Trung bình":
                 print(f"\n  Kết quả: Trung bình")
-                print("  Mật khẩu đủ yêu cầu nhưng ngắn (≤ 8 ký tự). Nên dùng > 8 ký tự.")
+                print("  Mật khẩu đủ yêu cầu nhưng ngắn (< 10 ký tự). Nên dùng ít nhất 10 ký tự.")
             else:
                 print(f"\n  Kết quả: Mạnh")
                 print("  Mật khẩu tốt!")
@@ -92,7 +91,7 @@ def do_register():
 
         # Password with strength feedback
         while True:
-            password = getpass.getpass("Mật khẩu: ")
+            password = input("Mật khẩu: ")
             strength = get_password_strength(password)
             print(f"Độ mạnh mật khẩu: {strength}")
             if not meets_password_requirements(password):
@@ -100,7 +99,7 @@ def do_register():
                 continue
             break
 
-        confirm_password = getpass.getpass("Xác nhận mật khẩu: ")
+        confirm_password = input("Xác nhận mật khẩu: ")
 
         phone = input("Số điện thoại (không bắt buộc, 10 số): ").strip() or None
         identify_card = input("Số CMND/CCCD (không bắt buộc, 12 số): ").strip() or None
@@ -128,7 +127,7 @@ def do_login():
     print_header("ĐĂNG NHẬP")
     try:
         identifier = input_nonempty("Username hoặc Email: ")
-        password = getpass.getpass("Mật khẩu: ")
+        password = input("Mật khẩu: ")
 
         success, message, user = login_user(identifier, password)
 
@@ -154,7 +153,7 @@ def do_login():
                 print("Gợi ý: Nên đổi mật khẩu mới với ít nhất 6 ký tự, kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.")
             elif strength == "Trung bình":
                 print("\n⚠️  Cảnh báo: Mật khẩu của bạn chưa đủ mạnh.")
-                print("Gợi ý: Nên đổi mật khẩu mới với ít nhất 12 ký tự, kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.")
+                print("Gợi ý: Nên đổi mật khẩu mới với ít nhất 10 ký tự, kết hợp chữ hoa, chữ thường, số và ký tự đặc biệt.")
             else:
                 print("\n✅ Mật khẩu của bạn đang ở mức tốt.")
 
@@ -243,16 +242,16 @@ def update_profile(user_id: int):
 def change_password(user_id: int):
     print_header("ĐỔI MẬT KHẨU")
     try:
-        old_pw = getpass.getpass("Mật khẩu cũ: ")
+        old_pw = input("Mật khẩu cũ: ")
         while True:
-            new_pw = getpass.getpass("Mật khẩu mới: ")
+            new_pw = input("Mật khẩu mới: ")
             if not meets_password_requirements(new_pw):
                 print(get_password_requirements_message())
                 continue
             strength = get_password_strength(new_pw)
             print(f"Độ mạnh mật khẩu mới: {strength}")
             break
-        confirm_pw = getpass.getpass("Xác nhận mật khẩu mới: ")
+        confirm_pw = input("Xác nhận mật khẩu mới: ")
 
         success, message = change_user_password(user_id, old_pw, new_pw, confirm_pw)
         print(f"\n{message}")

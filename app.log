@@ -19,3 +19,14 @@
 [2026-06-13 10:19:39] [LOGIN_SUCCESS] user_id=8    ip=192.168.0.104                  | Đăng nhập thành công (username=nhunguyen)
 [2026-06-13 10:20:02] [CHANGE_PASSWORD] user_id=8    ip=203.0.113.45 (local=192.168.0.104) | Thay đổi mật khẩu thành công
 [2026-06-13 10:20:11] [LOGOUT] user_id=8    ip=203.0.113.177 (local=192.168.0.104) | Người dùng đăng xuất
+[2026-06-14 00:46:07] [REGISTER] user_id=9    ip=203.0.113.177 (local=192.168.0.236) | Đăng ký thành công với username=nhunho, strength=Medium
+[2026-06-14 01:08:39] [REGISTER] user_id=10   ip=192.168.0.236                  | Đăng ký thành công với username=nghioilanghi, strength=Strong
+[2026-06-14 02:43:28] [LOGIN_FAILED] user_id=4    ip=192.168.0.236                  | Sai mật khẩu. Lần thử 1/5
+[2026-06-14 15:19:16] [REGISTER] user_id=11   ip=192.168.0.236                  | Đăng ký thành công với username=tramthuy, strength=Strong
+[2026-06-14 15:19:36] [LOGIN_SUCCESS] user_id=11   ip=192.168.0.236                  | Đăng nhập thành công (username=tramthuy)
+[2026-06-14 15:25:03] [LOGIN_SUCCESS] user_id=11   ip=10.23.109.8 (local=192.168.0.236) | Đăng nhập thành công (username=tramthuy)
+[2026-06-14 15:26:26] [LOGIN_SUCCESS] user_id=11   ip=198.51.100.23 (local=192.168.0.236) | Đăng nhập thành công (username=tramthuy)
+[2026-06-14 15:26:55] [UPDATE_PROFILE] user_id=11   ip=192.168.0.236                  | Cập nhật: full_name
+[2026-06-14 15:27:15] [UPDATE_PROFILE] user_id=11   ip=10.140.139.205 (local=192.168.0.236) | Cập nhật: full_name, phone
+[2026-06-14 15:27:44] [CHANGE_PASSWORD] user_id=11   ip=192.168.0.236                  | Thay đổi mật khẩu thành công
+[2026-06-14 15:27:55] [LOGOUT] user_id=11   ip=192.168.0.236                  | Người dùng đăng xuất

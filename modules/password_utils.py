@@ -41,11 +41,13 @@ def meets_password_requirements(password: str) -> bool:
 
 def get_password_strength(password: str) -> str:
     """Return 'Weak' | 'Medium' | 'Strong'.
-    Weak = does not meet base requirements.
+    Weak   = does not meet base requirements (meets_password_requirements).
+    Medium = meets requirements but length < 10.
+    Strong = meets requirements and length >= 10.
     """
     if not meets_password_requirements(password):
         return "Weak"
-    if len(password) <= 8:
+    if len(password) < 10:
         return "Medium"
     return "Strong"
 

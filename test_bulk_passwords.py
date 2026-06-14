@@ -1,6 +1,6 @@
 """
 test_bulk_passwords.py — Kiểm tra độ mạnh hàng loạt mật khẩu từ file.
-Đọc từ: test/test_passwords.txt
+Đọc từ: tests/test_passwords.txt
 Chạy:   python test_bulk_passwords.py
 """
 
@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from modules.password_utils import check_password_strength
 
-TEST_FILE = os.path.join(os.path.dirname(__file__), "test", "test_passwords.txt")
+TEST_FILE = os.path.join(os.path.dirname(__file__), "tests", "test_passwords.txt")
 
 # Màu sắc terminal
 RED    = "\033[91m"
