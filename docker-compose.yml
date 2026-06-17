@@ -9,13 +9,11 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      # Sử dụng mysql -e SELECT để chắc chắn server đã sẵn sàng chấp nhận query từ client khác container
       test: ["CMD-SHELL", "mysql -h localhost -uroot -p${DB_PASSWORD:-A123456a@@} -e 'SELECT 1' > /dev/null 2>&1 || exit 1"]
       interval: 5s
       timeout: 10s
       retries: 15
       start_period: 30s
-    # Mở port 3307 trên máy host nếu bạn muốn dùng MySQL client bên ngoài để debug (không bắt buộc)
     ports:
       - "3307:3306"
 
@@ -24,18 +22,24 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: passwordsecurity-app
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    ports:
+      - "8501:8501"
     environment:
-      # Ghi đè host DB vì bên trong Docker network tên service là "db"
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=${DB_PASSWORD:-A123456a@@}
-      - DB_NAME=${DB_NAME:-password_security}
-      - MASTER_KEY=${MASTER_KEY}
-    tty: true
-    stdin_open: true
+      DB_HOST: db
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-A123456a@@}
+      DB_NAME: ${DB_NAME:-password_security}
+      MASTER_KEY: ${MASTER_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8501/_stcore/health')\" || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
 
 volumes:
   db_data:

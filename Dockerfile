@@ -1,21 +1,22 @@
 FROM python:3.12-slim
 
-# Giảm buffering output (quan trọng cho CLI tương tác + log Docker)
-# Không ghi .pyc bên trong container
 ENV PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    STREAMLIT_SERVER_PORT=8501 \
+    STREAMLIT_SERVER_ADDRESS=0.0.0.0 \
+    STREAMLIT_SERVER_HEADLESS=true \
+    STREAMLIT_BROWSER_GATHER_USAGE_STATS=false
 
 WORKDIR /app
 
-# Cài dependencies trước (tận dụng layer cache khi chỉ sửa code)
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# Copy source (được .dockerignore lọc: loại venv, __pycache__, .env, logs, v.v.)
+# Copy toàn bộ mã nguồn dự án (lọc qua .dockerignore)
 COPY . .
 
-# Ứng dụng CLI tương tác.
-# Chạy bằng: docker compose run --rm -it app
-# (tty + stdin_open đã được cấu hình trong docker-compose.yml)
-CMD ["python", "-u", "main.py"]
+EXPOSE 8501
+
+# Giao diện Streamlit — truy cập http://localhost:8501
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]

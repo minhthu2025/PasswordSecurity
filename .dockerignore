@@ -1,17 +1,28 @@
-# Docker build context ignore - giảm size context, tránh copy secret/venv
+# Docker build context — loại trừ file không cần thiết, giữ toàn bộ mã nguồn dự án
+
+# Secret & môi trường local
 .env
+
+# Python virtualenv & cache
 venv/
 .venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Git & hệ thống
 .git/
 .gitignore
 .DS_Store
+
+# Log runtime (tạo mới trong container)
 app.log
+
+# Tài liệu & cấu hình Docker (không cần trong image)
 *.md
 Dockerfile*
 docker-compose*.yml
 .dockerignore
-# tests/ được giữ lại (nhỏ) để có thể nạp sample_data.sql nếu cần

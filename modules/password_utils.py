@@ -30,7 +30,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 
 
 def meets_password_requirements(password: str) -> bool:
-    if len(password) < 6:
+    if len(password) < 8:
         return False
     has_upper = any(c.isupper() for c in password)
     has_lower = any(c.islower() for c in password)
@@ -41,13 +41,13 @@ def meets_password_requirements(password: str) -> bool:
 
 def get_password_strength(password: str) -> str:
     """Return 'Weak' | 'Medium' | 'Strong'.
-    Weak   = does not meet base requirements (meets_password_requirements).
-    Medium = meets requirements but length < 10.
-    Strong = meets requirements and length >= 10.
+    Weak   = < 8 ký tự hoặc thiếu yêu cầu bắt buộc.
+    Medium = đủ yêu cầu, 8–11 ký tự.
+    Strong = đủ yêu cầu, >= 12 ký tự.
     """
     if not meets_password_requirements(password):
         return "Weak"
-    if len(password) < 10:
+    if len(password) < 12:
         return "Medium"
     return "Strong"
 
@@ -61,7 +61,7 @@ def check_password_strength(password: str) -> str:
 
 
 def get_password_requirements_message() -> str:
-    return "Mật khẩu phải có ít nhất 6 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
+    return "Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ hoa, chữ thường, số và ký tự đặc biệt."
 
 
 def is_valid_username(username: str) -> tuple[bool, str]:
@@ -100,3 +100,16 @@ def is_valid_identify_card(identify_card: str | None) -> bool:
         return True  # optional
     digits = "".join(filter(str.isdigit, identify_card))
     return len(digits) == 12 and len(identify_card) == 12
+
+
+def password_input(label: str, key: str, placeholder: str = "") -> str:
+    """Ô mật khẩu native — type=password, không dùng nested columns."""
+    import streamlit as st
+
+    value = st.text_input(
+        label,
+        type="password",
+        key=key,
+        placeholder=placeholder,
+    )
+    return value or ""

@@ -1,176 +1,206 @@
-# PasswordSecurity
+# PassGuard — Công cụ Kiểm tra Độ Mạnh Mật Khẩu & Mã Hóa Dữ Liệu
 
-Hệ thống quản lý mật khẩu và xác thực người dùng dạng **Console (CLI)** được viết bằng Python. Dự án tập trung vào bảo mật thực tế: hash mật khẩu mạnh, mã hóa dữ liệu cá nhân, chống brute-force và ghi log hoạt động.
+**Đề tài 12** — Nhóm Mã hóa và Thám mã  
+Môn: An toàn thông tin
 
-## Mô tả
+---
 
-Ứng dụng cho phép người dùng:
-- Đăng ký tài khoản với thông tin cá nhân (họ tên, email, SĐT, CMND/CCCD, địa chỉ)
-- Đăng nhập an toàn (hỗ trợ username hoặc email)
-- Xem và cập nhật thông tin cá nhân
-- Đổi mật khẩu
-- Kiểm tra độ mạnh bất kỳ mật khẩu nào (không cần đăng nhập)
-- Kiểm tra hàng loạt mật khẩu từ file và xem thống kê
+## 1. Mục tiêu
 
-Tất cả dữ liệu nhạy cảm được **mã hóa tại rest**, mật khẩu được **hash bằng Argon2id**, và có cơ chế **khóa tài khoản tạm thời** khi đăng nhập sai nhiều lần.
+Bài toán đặt ra: người dùng thường đặt mật khẩu yếu, dễ đoán hoặc lưu trữ mật khẩu không an toàn (plaintext, MD5 không salt). Kẻ tấn công có thể dùng **Rainbow Table** để tra cứu hash và phục hồi mật khẩu gốc trong vài giây.
 
-## Tính năng nổi bật
+Dự án giải quyết 3 vấn đề cốt lõi:
 
-- **Mã hóa dữ liệu cá nhân (PII)**: Họ tên, email, SĐT, CMND/CCCD, địa chỉ được mã hóa bằng **AES-256-GCM** (key 32 byte từ `MASTER_KEY` trong `.env` dạng hex).
-- **Hash mật khẩu an toàn**: Sử dụng **Argon2id** (memory-hard) với cấu hình mạnh (`time_cost=2`, `memory=100MiB`, `parallelism=8`).
-- **Chính sách mật khẩu**:
-  - Tối thiểu 6 ký tự
-  - Phải chứa chữ hoa, chữ thường, số và ký tự đặc biệt
-  - Hiển thị độ mạnh: Yếu / Trung bình / Mạnh
-- **Bảo vệ brute-force**: Khóa tài khoản **3 phút** sau **5 lần đăng nhập sai**.
-- **Validation chặt chẽ**: Username (6–20 ký tự, không chứa từ cấm), email, SĐT (10 số), CMND/CCCD (12 số).
-- **Kiểm tra độ mạnh hàng loạt**: `test_bulk_passwords.py` đọc `tests/test_passwords.txt`, in bảng kết quả có màu và thống kê tỷ lệ từng mức.
-- **Logging hoạt động**: Mọi hành động ghi log ra console (kèm IP) và lưu vào bảng `activity_logs`.
-- **Tự động khởi tạo CSDL**: Tạo database, bảng `users` và `activity_logs`, tự động thêm cột khi schema thay đổi.
+| Vấn đề | Giải pháp |
+|--------|-----------|
+| Mật khẩu yếu, không có tiêu chí đánh giá | Module kiểm tra độ mạnh theo thời gian thực |
+| Hash mật khẩu không an toàn (MD5, SHA-1 không salt) | Argon2id + Salt ngẫu nhiên (memory-hard) |
+| Dữ liệu cá nhân lưu plaintext trong CSDL | Mã hóa AES-256-GCM tại rest |
+
+---
+
+## 2. Cơ sở lý thuyết
+
+### 2.1 Argon2id — Hàm băm mật khẩu chuyên dụng
+
+Argon2 là thuật toán băm mật khẩu đoạt giải Password Hashing Competition (2015). Biến thể **Argon2id** kết hợp Argon2i (chống side-channel) và Argon2d (chống GPU/ASIC).
+
+**Toán học đằng sau:**
+
+```
+output = Argon2id(password, salt, t, m, p, taglen)
+```
+
+- `t` (time_cost): số vòng lặp — tăng CPU time
+- `m` (memory_cost): RAM tối thiểu phải dùng (KB) — chống GPU/ASIC vì VRAM đắt
+- `p` (parallelism): số luồng song song
+
+Cấu hình dự án (`memory=100MiB, t=2, p=8`) đảm bảo mỗi lần hash tốn ~100MB RAM và ~vài trăm ms — quá chậm để brute-force hàng loạt.
+
+**Salt ngẫu nhiên** (16 byte) được sinh tự động mỗi lần hash → cùng mật khẩu cho ra hash khác nhau → vô hiệu hóa Rainbow Table.
+
+**So sánh với MD5/SHA không salt:**
+```
+MD5("password") = 5f4dcc3b5aa765d61d8327deb882cf99  ← tra bảng ngay
+Argon2id("password", salt=random) = $argon2id$v=19$...  ← không tra được
+```
+
+### 2.2 AES-256-GCM — Mã hóa dữ liệu cá nhân
+
+**AES (Advanced Encryption Standard)** là block cipher hoạt động trên khối 128-bit với khóa 256-bit (14 vòng).
+
+**Chế độ GCM (Galois/Counter Mode):**
+```
+Ciphertext = AES_CTR(plaintext, key, IV)
+AuthTag    = GHASH(AAD || Ciphertext)
+```
+
+- **IV ngẫu nhiên 12 byte** mỗi lần mã hóa → cùng dữ liệu cho ciphertext khác nhau
+- **AuthTag 16 byte** xác thực tính toàn vẹn — phát hiện nếu dữ liệu bị giả mạo
+- **Điểm yếu nếu dùng sai**: AES-ECB (không IV) → plaintext giống nhau → ciphertext giống nhau → lộ pattern (xem `demo_weaknesses.py` Demo 2)
+
+### 2.3 Chính sách mật khẩu
+
+| Mức | Tiêu chí |
+|-----|----------|
+| Yếu | Dưới 8 ký tự hoặc thiếu điều kiện bắt buộc |
+| Trung bình | Đủ điều kiện, 8–11 ký tự |
+| Mạnh | Đủ điều kiện, ≥ 12 ký tự |
+
+Điều kiện bắt buộc: chữ hoa + chữ thường + số + ký tự đặc biệt.
+
+---
+
+## 3. Kịch bản thực nghiệm
+
+### Kịch bản 1 — Rainbow Table Attack
+Chạy `demo_weaknesses.py` (Demo 1): hash cùng mật khẩu bằng MD5 không salt → tra bảng crack ngay lập tức. Hash bằng Argon2id + salt → không tra được.
+
+### Kịch bản 2 — AES-ECB vs AES-GCM
+Chạy `demo_weaknesses.py` (Demo 2): mã hóa dữ liệu lặp lại bằng ECB → ciphertext lặp lại, lộ pattern. GCM với IV ngẫu nhiên → ciphertext hoàn toàn khác nhau.
+
+### Kịch bản 3 — Benchmark Argon2 memory-hard
+Chạy `demo_weaknesses.py` (Demo 3): đo thời gian hash theo memory_cost (8MB / 32MB / 64MB / 100MB) → chứng minh chi phí tính toán tăng tuyến tính, GPU brute-force không khả thi.
+
+### Kịch bản 4 — Kiểm tra độ mạnh hàng loạt
+Chạy `test_bulk_passwords.py`: đọc 25 mật khẩu mẫu từ `tests/test_passwords.txt`, phân loại Yếu/Trung bình/Mạnh, in bảng thống kê.
+
+### Kịch bản 5 — Giao diện Web (Streamlit)
+Chạy `streamlit run app.py`: đăng ký tài khoản, kiểm tra độ mạnh theo thời gian thực, đăng nhập, xem/cập nhật profile, đổi mật khẩu.
+
+---
+
+## 4. Kết quả đạt được
+
+- **Module kiểm tra độ mạnh** hoạt động theo thời gian thực trên giao diện web
+- **Đăng ký người dùng** với hash Argon2id + salt tự động — chống Rainbow Table
+- **Mã hóa AES-256-GCM** toàn bộ PII (họ tên, email, SĐT, CMND, địa chỉ) trước khi lưu DB
+- **Cơ chế chống brute-force**: khóa tài khoản 3 phút sau 5 lần đăng nhập sai
+- **Demo trực quan** 4 điểm yếu bảo mật với kết quả đo đạc thực tế
+- **Giao diện web PassGuard** (Streamlit) đầy đủ chức năng, chạy được trong Docker
+
+---
+
+## 5. Biện pháp phòng chống
+
+| Mối đe dọa | Biện pháp trong dự án |
+|------------|----------------------|
+| Rainbow Table | Argon2id + Salt ngẫu nhiên 16 byte |
+| Brute-force online | Lockout 5 lần / 3 phút |
+| Brute-force offline (GPU) | Argon2id memory-hard 100MiB — GPU VRAM không đủ |
+| Lộ CSDL | AES-256-GCM mã hóa toàn bộ PII, MASTER_KEY tách biệt |
+| Mã hóa sai chế độ (ECB) | Dùng GCM với IV ngẫu nhiên + AuthTag xác thực toàn vẹn |
+| Mật khẩu yếu | Enforce chính sách + hiển thị độ mạnh realtime |
+| Injection | Parameterized query toàn bộ (mysql-connector) |
+
+---
 
 ## Công nghệ sử dụng
 
-| Thành phần              | Công nghệ                     |
-|-------------------------|-------------------------------|
-| Ngôn ngữ                | Python 3.10+                  |
-| Hash mật khẩu           | Argon2id (argon2-cffi)        |
-| Mã hóa dữ liệu          | AES-GCM 256 (cryptography)    |
-| CSDL                    | MySQL                         |
-| Kết nối DB              | mysql-connector-python        |
-| Quản lý biến môi trường | python-dotenv                 |
+| Thành phần | Công nghệ |
+|------------|-----------|
+| Giao diện web | Streamlit |
+| Hash mật khẩu | Argon2id (argon2-cffi) |
+| Mã hóa dữ liệu | AES-256-GCM (cryptography) |
+| CSDL | MySQL |
+| Kết nối DB | mysql-connector-python |
+| Containerization | Docker + Docker Compose |
+| Biến môi trường | python-dotenv |
 
-## Yêu cầu
+---
 
-- Python 3.10 trở lên
-- MySQL Server (local hoặc remote)
-- (Khuyến nghị) Virtual environment
+## Cài đặt & Chạy
 
-## Hướng dẫn cài đặt & chạy
+### Cách 1 — Docker (khuyến nghị)
 
-### 1. Chuẩn bị môi trường
+```bash
+cp .env.example .env
+# Chỉnh DB_PASSWORD và MASTER_KEY trong .env
+docker-compose up --build
+```
+
+Truy cập: `http://localhost:8501`
+
+### Cách 2 — Chạy thủ công
 
 ```bash
 python3 -m venv venv
-source venv/bin/activate       # Linux/macOS
-# venv\Scripts\activate        # Windows
-
+source venv/bin/activate
 pip install -r requirements.txt
+
+cp .env.example .env
+# Chỉnh thông tin DB và MASTER_KEY
+
+streamlit run app.py        # Giao diện web
+python main.py              # Giao diện CLI
 ```
 
-### 2. Cấu hình file `.env`
-
-Tạo file `.env` ở thư mục gốc (cùng cấp `main.py`):
-
-```env
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=your_strong_password
-DB_NAME=password_security
-
-MASTER_KEY=your64characterhexkeyhere1234567890abcdef1234567890abcdef12
-```
-
-Tạo `MASTER_KEY` mới:
-
+Tạo `MASTER_KEY` (32 byte hex):
 ```bash
 python -c "import os; print(os.urandom(32).hex())"
 ```
 
-### 3. Chạy ứng dụng chính
+### Chạy demo & kiểm tra
 
 ```bash
-python main.py
+python demo_weaknesses.py       # Demo 4 điểm yếu bảo mật
+python test_bulk_passwords.py   # Kiểm tra hàng loạt mật khẩu
 ```
 
-Ứng dụng tự động kết nối MySQL, tạo database và bảng nếu chưa có.
-
-### 4. Nạp dữ liệu mẫu (tùy chọn)
-
-```bash
-mysql -u root -p password_security < tests/sample_data.sql
-```
-
-> **Lưu ý**: `sample_data.sql` được sinh ra với một `MASTER_KEY` cụ thể. Nếu dùng `MASTER_KEY` khác, dữ liệu PII sẽ không giải mã được.
-
-### 5. Kiểm tra hàng loạt mật khẩu
-
-```bash
-python test_bulk_passwords.py
-```
-
-Đọc 25 mật khẩu mẫu từ `tests/test_passwords.txt`, in bảng kết quả và thống kê.
-
-### 6. Demo điểm yếu bảo mật
-
-```bash
-python demo_weaknesses.py
-```
-
-Không cần DB hay `.env`. Chạy độc lập hoàn toàn.
+---
 
 ## Cấu trúc dự án
 
 ```
 PasswordSecurity/
-├── main.py                   # CLI menu chính, xử lý tương tác người dùng
-├── demo_weaknesses.py        # Demo 4 điểm yếu bảo mật (báo cáo + thuyết trình)
-├── test_bulk_passwords.py    # Kiểm tra hàng loạt mật khẩu từ file, in bảng + thống kê
+├── app.py                    # Giao diện web Streamlit (PassGuard)
+├── main.py                   # CLI menu chính
+├── demo_weaknesses.py        # Demo 4 điểm yếu bảo mật
+├── test_bulk_passwords.py    # Kiểm tra hàng loạt mật khẩu
 ├── requirements.txt
-├── .env                      # (không commit) DB credentials + MASTER_KEY
-├── .gitignore
-├── README.md
+├── Dockerfile
+├── docker-compose.yml
+├── .env.example
 ├── modules/
-│   ├── auth.py               # Logic đăng ký, đăng nhập, cập nhật profile, đổi mật khẩu
-│   ├── database.py           # Kết nối MySQL, CRUD, tự động init schema + migration
-│   ├── encryption.py         # encrypt_value / decrypt_value dùng AES-256-GCM + MASTER_KEY
-│   ├── logger.py             # get_client_ip() + log_activity (in log + lưu DB)
-│   └── password_utils.py     # Argon2 hash/verify, độ mạnh mật khẩu, validation
+│   ├── auth.py               # Đăng ký, đăng nhập, profile, đổi mật khẩu
+│   ├── database.py           # MySQL CRUD, auto-init schema
+│   ├── encryption.py         # AES-256-GCM encrypt/decrypt
+│   ├── logger.py             # log_activity → file + DB
+│   └── password_utils.py     # Argon2 hash/verify, kiểm tra độ mạnh
 └── tests/
-    ├── test_passwords.txt    # 25 mật khẩu mẫu (4 nhóm: quá ngắn, thiếu ký tự, trung bình, mạnh)
-    └── sample_data.sql       # Dữ liệu mẫu 6 user (PII đã mã hóa, password đã hash)
+    ├── test_passwords.txt    # 25 mật khẩu mẫu
+    └── sample_data.sql       # 6 user mẫu (PII đã mã hóa)
 ```
 
-## Luồng sử dụng điển hình
+---
 
-1. **Đăng ký** → Nhập thông tin → Kiểm tra độ mạnh + validation → Hash Argon2 + Encrypt AES-GCM → Lưu DB + Log
-2. **Đăng nhập** → Kiểm tra khóa tài khoản → Xác thực Argon2 → Hiển thị thông tin + kiểm tra bảo mật mật khẩu
-3. **Xem/Cập nhật Profile** → Decrypt khi hiển thị, encrypt khi lưu lại
-4. **Đổi mật khẩu** → Xác thực mật khẩu cũ → Hash mật khẩu mới
-5. **Mọi hành động** đều ghi log ra console:
+## Lưu ý bảo mật
 
-```
-[2026-06-12 17:21:15] [LOGIN_SUCCESS] user_id=42   ip=10.140.58.242   | Đăng nhập thành công
-```
+- `MASTER_KEY` là khóa duy nhất giải mã PII — không commit lên git, không chia sẻ
+- Thay đổi `MASTER_KEY` khiến dữ liệu cũ không giải mã được
+- IP trong log là mô phỏng (local + random) cho mục đích demo
+- Chạy trong môi trường Lab (Docker/VM) theo khuyến nghị của đề tài
 
-## Demo điểm yếu bảo mật (`demo_weaknesses.py`)
+---
 
-| Demo | Nội dung |
-|------|----------|
-| 1    | Rainbow Table Attack — MD5 không salt bị crack ngay; Argon2 với salt miễn nhiễm |
-| 2    | AES-ECB lộ pattern vs AES-GCM — khối plaintext giống nhau → ciphertext giống nhau |
-| 3    | Benchmark Argon2 — đo thời gian hash thực tế theo `memory_cost` (8MB / 32MB / 64MB) |
-| 4    | Argon2 memory-hard vs GPU brute-force — ước tính thời gian crack theo VRAM |
-
-## Dữ liệu mẫu (`tests/sample_data.sql`)
-
-6 user mẫu phục vụ các tình huống demo khác nhau:
-
-| Username   | Password           | Kịch bản demo                           |
-|------------|--------------------|-----------------------------------------|
-| nguyenvana | MyP@ssw0rd2026!    | Tài khoản đầy đủ thông tin             |
-| tranthib   | Secure#Hash99XY    | Thiếu CMND và địa chỉ                  |
-| levanc     | Dragon$Fly2026#    | Tài khoản đang bị khóa (5 lần sai)     |
-| phamthid   | CorrectH0rse!99    | Đã sai 3/5 lần — chưa bị khóa          |
-| hoangvane  | Admin@Secure123!   | Demo đổi mật khẩu                       |
-| vuthif     | Bl@ckP4nther_99!   | Tài khoản sinh viên, thông tin tối thiểu |
-
-## Bảo mật & Lưu ý quan trọng
-
-- **MASTER_KEY** là chìa khóa duy nhất để giải mã PII. Không commit, không chia sẻ.
-- Thay đổi `MASTER_KEY` → dữ liệu cũ trong DB sẽ **không giải mã được** (cần re-encrypt thủ công).
-- Mật khẩu **không bao giờ lưu plaintext**.
-- IP trong log là **mô phỏng** (local + random) cho mục đích demo Console. Môi trường thực cần lấy IP từ request.
-
-## Giấy phép
-
-Dự án phát triển cho mục đích học tập và minh họa kỹ thuật bảo mật cơ bản.
+*Dự án phát triển cho mục đích học tập — Môn An toàn thông tin*
