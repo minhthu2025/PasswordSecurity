@@ -10,7 +10,11 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip \
+# mysql client: dùng import file seed.sql trong service migrate
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends default-mysql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
 # Copy toàn bộ mã nguồn dự án (lọc qua .dockerignore)
@@ -18,5 +22,9 @@ COPY . .
 
 EXPOSE 8501
 
-# Giao diện Streamlit — truy cập http://localhost:8501
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+# Script migrate (service `migrate`) + entrypoint Streamlit (service `app`)
+COPY scripts/docker_entrypoint.sh /app/scripts/docker_entrypoint.sh
+COPY scripts/migrate_host_mysql.py /app/scripts/migrate_host_mysql.py
+RUN chmod +x /app/scripts/docker_entrypoint.sh
+
+ENTRYPOINT ["/app/scripts/docker_entrypoint.sh"]

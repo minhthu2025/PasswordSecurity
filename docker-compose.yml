@@ -17,6 +17,34 @@ services:
     ports:
       - "3307:3306"
 
+  # Service migrate: import dữ liệu host → DB Docker.
+  # Trên macOS: chạy `bash scripts/docker_compose_up.sh` để export host:3306 ra docker-migrate/seed.sql trước.
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: passwordsecurity-migrate
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # File seed.sql do scripts/export_host_mysql.sh tạo trên máy host
+      - ./docker-migrate:/migrate:ro
+    environment:
+      AUTO_MIGRATE_FROM_HOST: ${AUTO_MIGRATE_FROM_HOST:-1}
+      MIGRATE_SQL_FILE: /migrate/seed.sql
+      MIGRATE_META_FILE: /migrate/meta.env
+      MIGRATE_SOURCE_HOST: ${MIGRATE_SOURCE_HOST:-127.0.0.1}
+      MIGRATE_SOURCE_PORT: ${MIGRATE_SOURCE_PORT:-3306}
+      MIGRATE_FORCE: ${MIGRATE_FORCE:-0}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: ${DB_PASSWORD:-A123456a@@}
+      DB_NAME: ${DB_NAME:-password_security}
+    entrypoint: ["python", "/app/scripts/migrate_host_mysql.py"]
+    restart: "no"
+
   app:
     build:
       context: .
@@ -26,6 +54,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8501:8501"
     environment:

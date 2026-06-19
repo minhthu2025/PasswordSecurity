@@ -2,3 +2,7 @@
 venv/
 .venv/
 __pycache__/
+
+# File seed tạm khi migrate host → Docker (sinh bởi scripts/export_host_mysql.sh)
+docker-migrate/seed.sql
+docker-migrate/meta.env

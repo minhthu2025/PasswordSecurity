@@ -30,3 +30,22 @@
 [2026-06-14 15:27:15] [UPDATE_PROFILE] user_id=11   ip=10.140.139.205 (local=192.168.0.236) | Cập nhật: full_name, phone
 [2026-06-14 15:27:44] [CHANGE_PASSWORD] user_id=11   ip=192.168.0.236                  | Thay đổi mật khẩu thành công
 [2026-06-14 15:27:55] [LOGOUT] user_id=11   ip=192.168.0.236                  | Người dùng đăng xuất
+[2026-06-17 12:13:03] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.236                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-17 12:17:43] [LOGIN_FAILED] user_id=7    ip=192.168.0.236                  | Sai mật khẩu. Lần thử 1/5
+[2026-06-17 12:34:41] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.236                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-17 12:34:44] [LOGOUT] user_id=7    ip=192.168.0.236                  | Người dùng đăng xuất
+[2026-06-17 15:37:18] [REGISTER] user_id=12   ip=192.168.0.236                  | Đăng ký thành công với username=bichtramtran, strength=Strong
+[2026-06-17 15:51:38] [LOGIN_SUCCESS] user_id=12   ip=192.168.0.236                  | Đăng nhập thành công (username=bichtramtran)
+[2026-06-17 15:52:43] [UPDATE_PROFILE] user_id=12   ip=198.51.100.23 (local=192.168.0.236) | Cập nhật: address
+[2026-06-17 15:53:35] [CHANGE_PASSWORD] user_id=12   ip=192.168.0.236                  | Thay đổi mật khẩu thành công
+[2026-06-17 15:55:39] [CHANGE_PASSWORD] user_id=12   ip=192.168.0.236                  | Thay đổi mật khẩu thành công
+[2026-06-17 15:55:42] [LOGOUT] user_id=12   ip=192.168.0.236                  | Người dùng đăng xuất (Streamlit)
+[2026-06-18 16:24:11] [LOGIN_FAILED] user_id=12   ip=10.218.143.133 (local=192.168.0.236) | Sai mật khẩu. Lần thử 1/5
+[2026-06-18 16:24:29] [LOGIN_SUCCESS] user_id=7    ip=198.51.100.23 (local=192.168.0.236) | Đăng nhập thành công (username=minhthu11)
+[2026-06-18 19:40:20] [LOGIN_SUCCESS] user_id=7    ip=192.168.0.236                  | Đăng nhập thành công (username=minhthu11)
+[2026-06-18 19:40:56] [CHANGE_PASSWORD] user_id=7    ip=192.168.0.236                  | Thay đổi mật khẩu thành công
+[2026-06-18 19:43:41] [LOGOUT] user_id=7    ip=172.16.122.17 (local=192.168.0.236) | Người dùng đăng xuất
+[2026-06-19 01:01:26] [LOGIN_SUCCESS] user_id=7    ip=192.168.10.124 (local=192.168.0.236) | Đăng nhập thành công (username=minhthu11)
+[2026-06-19 01:02:42] [UPDATE_PROFILE] user_id=7    ip=10.123.23.170 (local=192.168.0.236) | Cập nhật: identify_card, address
+[2026-06-19 07:16:29] [LOGIN_FAILED] user_id=7    ip=10.140.58.242                  | Sai mật khẩu. Lần thử 1/5
+[2026-06-19 07:16:29] [LOGIN_FAILED] user_id=11   ip=10.140.58.242                  | Sai mật khẩu. Lần thử 1/5
