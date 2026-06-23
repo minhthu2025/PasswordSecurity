@@ -40,10 +40,12 @@ bash scripts/docker_compose_up.sh --build
 bash scripts/docker_compose_up.sh -d --build
 ```
 
-Script thực hiện:
+Script thực hiện (3 bước):
 1. `scripts/export_host_mysql.sh` → tạo `docker-migrate/seed.sql`
-2. `docker compose up` → service `migrate` import vào DB Docker
-3. Service `app` chạy Streamlit sau khi migrate xong
+2. Khởi động `db` trước, **chờ MySQL healthy** (lần đầu có thể 2–10 phút), tự reset volume nếu init bị kill/OOM
+3. Build (nếu có `--build`) rồi chạy `migrate` → import seed → `app` (Streamlit)
+
+> **Lưu ý:** Luôn dùng `scripts/docker_compose_up.sh` thay cho `docker compose up` trực tiếp — tránh lỗi `db is unhealthy` khi build image song song với MySQL init lần đầu.
 
 Truy cập: **http://localhost:8501**
 
@@ -51,11 +53,14 @@ MySQL Docker (từ máy host): `localhost:3307` — user `root`, password theo `
 
 ### Khởi động Docker không migrate (chỉ dùng DB Docker hiện có)
 
+Tắt migrate trong `.env`: `AUTO_MIGRATE_FROM_HOST=0`, rồi vẫn dùng script wrapper:
+
 ```bash
-docker compose build
-docker compose up --build        # foreground
-docker compose up -d --build     # nền
+bash scripts/docker_compose_up.sh --build      # foreground
+bash scripts/docker_compose_up.sh -d --build   # nền
 ```
+
+Không khuyến nghị `docker compose up` trực tiếp — dễ gặp `db is unhealthy` trên Docker Desktop (macOS).
 
 ### Biến môi trường migrate (trong `.env`, tùy chọn)
 
@@ -76,7 +81,22 @@ bash scripts/export_host_mysql.sh
 # Tạo: docker-migrate/seed.sql và docker-migrate/meta.env
 ```
 
-Sau đó có thể `docker compose up -d` — service `migrate` sẽ import file seed.
+Sau đó chạy `bash scripts/docker_compose_up.sh -d` — service `migrate` sẽ import file seed.
+
+### Xử lý lỗi `db is unhealthy` / MySQL init bị OOM
+
+```bash
+# Reset volume Docker (không ảnh hưởng MySQL host:3306) rồi chạy lại
+docker compose down -v
+bash scripts/docker_compose_up.sh --build
+```
+
+Nếu vẫn lỗi do Docker Desktop thiếu RAM (Settings → Resources → Memory ≥ 6GB), dùng MySQL trên máy thay container:
+
+```bash
+DOCKER_USE_HOST_DB=1 bash scripts/docker_compose_up.sh --build
+# App kết nối host.docker.internal:3306, bỏ qua db/migrate
+```
 
 ---
 
@@ -85,18 +105,17 @@ Sau đó có thể `docker compose up -d` — service `migrate` sẽ import file
 Ghi đè lệnh mặc định để vào menu dòng lệnh:
 
 ```bash
-# 1. Khởi động database + migrate (nếu cần đồng bộ từ host)
-bash scripts/docker_compose_up.sh -d db
-docker compose run --rm migrate
+# 1. Khởi động stack nền (db + migrate + app)
+bash scripts/docker_compose_up.sh -d --build
 
 # 2. Chạy CLI (menu đầy đủ, gõ phím bình thường)
 docker compose run --rm -it app python main.py
 ```
 
-Một lệnh (db nền + migrate + vào luôn CLI):
+Một lệnh (stack nền + vào luôn CLI):
 
 ```bash
-bash scripts/docker_compose_up.sh -d && docker compose run --rm -it app python main.py
+bash scripts/docker_compose_up.sh -d --build && docker compose run --rm -it app python main.py
 ```
 
 ---

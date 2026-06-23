@@ -14,6 +14,7 @@ from __future__ import annotations
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 # Thêm thư mục gốc dự án vào sys.path để import modules.*
@@ -52,6 +53,30 @@ def _connect(cfg: dict) -> tuple:
         return mysql.connector.connect(**cfg), None
     except Error as exc:
         return None, exc
+
+
+def _wait_for_db(cfg: dict, timeout_sec: int = 600, interval_sec: int = 5) -> tuple:
+    """Chờ MySQL container sẵn sàng (lần khởi tạo đầu trên Docker Desktop có thể rất chậm)."""
+    deadline = time.monotonic() + timeout_sec
+    last_err: Error | None = None
+    attempt = 0
+
+    while time.monotonic() < deadline:
+        attempt += 1
+        conn, err = _connect(cfg)
+        if conn is not None:
+            if attempt > 1:
+                print(f"[migrate] DB Docker sẵn sàng sau {attempt} lần thử.")
+            return conn, None
+        last_err = err
+        if attempt == 1 or attempt % 6 == 0:
+            print(
+                f"[migrate] Chờ DB Docker ({cfg['host']}:{cfg['port']}) — "
+                f"lần {attempt}, còn ~{max(0, int(deadline - time.monotonic()))}s..."
+            )
+        time.sleep(interval_sec)
+
+    return None, last_err
 
 
 def _count_rows(conn, table: str) -> int:
@@ -153,7 +178,7 @@ def _migrate_from_seed_file(target_cfg: dict) -> int | None:
     if not sql_path.is_file():
         return None
 
-    target_conn, target_err = _connect(target_cfg)
+    target_conn, target_err = _wait_for_db(target_cfg)
     if target_conn is None:
         print(f"[migrate] Không kết nối DB Docker để import SQL: {target_err}")
         return 1
@@ -202,7 +227,7 @@ def _migrate_live_copy(target_cfg: dict) -> int:
         )
         return 0
 
-    target_conn, target_err = _connect(target_cfg)
+    target_conn, target_err = _wait_for_db(target_cfg)
     if target_conn is None:
         print(f"[migrate] Không kết nối DB Docker — lỗi: {target_err}")
         source_conn.close()
